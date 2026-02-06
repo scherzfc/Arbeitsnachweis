@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlurManager | Rhein-Sieg-Kreis Produktivitätstool</title>
+    <meta name="description"
+        content="Produktivitätstool für das Katasteramt zur Erfassung und Auswertung von Flächendaten im Rhein-Sieg-Kreis">
+
+    <style>
+        /* ============================================
+           CSS VARIABLEN - APPLE DESIGN SYSTEM
+           ============================================ */
+        :root {
+            /* Farben */
+            --apple-blue: #007AFF;
+            --apple-blue-hover: #0056CC;
+            --apple-green: #34C759;
+            --apple-orange: #FF9500;
+            --apple-red: #FF3B30;
+            --apple-purple: #AF52DE;
+
+            /* Graustufen */
+            --bg-primary: #F2F2F7;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #E5E5EA;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #AEAEB2;
+            --border-color: rgba(0, 0, 0, 0.08);
+
+            /* Glassmorphism */
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.5);
+
+            /* Schatten */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06);
+
+            /* Abstände & Radien */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            /* Übergänge */
+            --transition-fast: all 0.2s ease;
+            --transition-normal: all 0.3s ease;
+            --transition-slow: all 0.4s ease;
+
+            /* Layout */
+            --header-height: 64px;
+            --max-width: 1200px;
+        }
+
+        /* ============================================
+           BASE STYLES - SAN FRANCISCO FONT
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============================================
+           HEADER - FROSTED GLASS EFFEKT
+           ============================================ */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-content {
+            width: 100%;
+            max-width: var(--max-width);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           MAIN CONTAINER
+           ============================================ */
+        main {
+            padding-top: calc(var(--header-height) + 24px);
+            padding-bottom: 48px;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+
+        /* ============================================
+           SECTION TITLES
+           ============================================ */
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: -12px;
+            margin-bottom: 16px;
+        }
+
+        /* ============================================
+           KARTEN DESIGN
+           ============================================ */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            transition: var(--transition-normal);
+            border: 1px solid var(--border-color);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-static {
+            transform: none !important;
+        }
+
+        .card-static:hover {
+            transform: none !important;
+        }
+
+        /* ============================================
+           PROGRESS RING - APPLE HEALTH STYLE
+           ============================================ */
+        .progress-section {
+            margin-bottom: 32px;
+        }
+
+        .progress-card {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            padding: 32px;
+        }
+
+        .progress-ring-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            flex-shrink: 0;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: var(--bg-tertiary);
+            stroke-width: 12;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke: url(#progressGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 408.4;
+            stroke-dashoffset: 408.4;
+            transition: stroke-dashoffset 1s ease-out;
+        }
+
+        .progress-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-percentage {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -1px;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-details {
+            flex: 1;
+        }
+
+        .progress-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .progress-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-value.highlight {
+            color: var(--apple-blue);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           KPI BENTO GRID
+           ============================================ */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .kpi-icon.blue {
+            background: rgba(0, 122, 255, 0.12);
+            color: var(--apple-blue);
+        }
+
+        .kpi-icon.green {
+            background: rgba(52, 199, 89, 0.12);
+            color: var(--apple-green);
+        }
+
+        .kpi-icon.orange {
+            background: rgba(255, 149, 0, 0.12);
+            color: var(--apple-orange);
+        }
+
+        .kpi-icon.purple {
+            background: rgba(175, 82, 222, 0.12);
+            color: var(--apple-purple);
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .kpi-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           EINGABE FORMULAR
+           ============================================ */
+        .input-section {
+            margin-bottom: 32px;
+        }
+
+        .input-card {
+            padding: 28px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .input-select,
+        .input-field {
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1px solid var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: var(--transition-fast);
+            font-family: inherit;
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .input-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386868B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+            cursor: pointer;
+        }
+
+        .input-select:focus,
+        .input-field:focus {
+            outline: none;
+            border-color: var(--apple-blue);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .input-suffix {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-suffix .input-field {
+            flex: 1;
+        }
+
+        .unit-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--apple-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--apple-blue-hover);
+            transform: scale(1.02);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #D1D1D6;
+        }
+
+        .btn-danger {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--apple-red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 59, 48, 0.2);
+        }
+
+        .btn-icon {
+            padding: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ============================================
+           HISTORIE TABELLE
+           ============================================ */
+        .history-section {
+            margin-bottom: 32px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+        }
+
+        .history-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        .history-table th {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-primary);
+        }
+
+        .history-table td {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover td {
+            background: rgba(0, 122, 255, 0.04);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .location-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-primary);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        /* ============================================
+           EDIT MODAL - FROSTED GLASS
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition-normal);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            width: 90%;
+            max-width: 480px;
+            transform: scale(0.9) translateY(20px);
+            transition: var(--transition-normal);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .modal-grid {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* ============================================
+           TOAST NOTIFICATIONS
+           ============================================ */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            background: var(--text-primary);
+            color: white;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            transform: translateX(120%);
+            transition: var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: var(--apple-green);
+        }
+
+        .toast.error {
+            background: var(--apple-red);
+        }
+
+        .toast.info {
+            background: var(--apple-blue);
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        @media (max-width: 1024px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .input-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .progress-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .progress-stats {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            main {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .header-content {
+                padding: 0 16px;
+            }
+
+            .header-date {
+                display: none;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-ring-container {
+                width: 140px;
+                height: 140px;
+            }
+
+            .progress-title {
+                font-size: 22px;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 12px;
+            }
+
+            .table-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-subtitle {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 18px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .progress-card {
+                padding: 20px;
+            }
+
+            .progress-stats {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+
+        /* ============================================
+           ANIMATIONEN
+           ============================================ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .delay-4 {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ============================================
+         HEADER MIT GLASEFFEKT
+         ============================================ -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">FM</div>
+                <div>
+                    <div class="logo-text">FlurManager</div>
+                    <div class="logo-subtitle">Rhein-Sieg-Kreis</div>
+                </div>
+            </div>
+            <div class="header-date" id="currentDate"></div>
+        </div>
+    </header>
+
+    <!-- ============================================
+         HAUPTINHALT
+         ============================================ -->
+    <main>
+        <!-- FORTSCHRITTS-RING SEKTION -->
+        <section class="progress-section animate-in delay-1">
+            <h2 class="section-title">Monatsziel</h2>
+            <div class="card progress-card card-static">
+                <div class="progress-ring-container">
+                    <svg class="progress-ring" viewBox="0 0 160 160">
+                        <defs>
+                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#007AFF" />
+                                <stop offset="100%" style="stop-color:#AF52DE" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-ring-bg" cx="80" cy="80" r="65" />
+                        <circle class="progress-ring-fill" id="progressRing" cx="80" cy="80" r="65" />
+                    </svg>
+                    <div class="progress-center-text">
+                        <div class="progress-percentage" id="progressPercent">0%</div>
+                        <div class="progress-label">Erreicht</div>
+                    </div>
+                </div>
+                <div class="progress-details">
+                    <h3 class="progress-title">Flächenerfassung Februar 2026</h3>
+                    <p class="progress-description">
+                        Erfasse Flächen aus Vermessungen und Fortführungen, um das monatliche Ziel von 4,5 km² zu
+                        erreichen.
+                    </p>
+                    <div class="progress-stats">
+                        <div class="stat-item">
+                            <span class="stat-value highlight" id="totalArea">0,0</span>
+                            <span class="stat-label">km² erfasst</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="remainingArea">4,5</span>
+                            <span class="stat-label">km² verbleibend</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="targetArea">4,5</span>
+                            <span class="stat-label">km² Monatsziel</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI BENTO GRID -->
+        <section class="kpi-section animate-in delay-2">
+            <h2 class="section-title">Statistiken</h2>
+            <div class="kpi-grid">
+                <div class="card kpi-card">
+                    <div class="kpi-icon blue">📊</div>
+                    <span class="kpi-value" id="kpiTotal">0</span>
+                    <span class="kpi-label">Einträge gesamt</span>
+                </div>
+                <div class="card kpi-card">
+                    <div class="kpi-icon green">📅</div>
+                    <span class="kpi-value" id="kpiDailyAvg">0,0</span>
+                    <span class="kpi-label">km² pro Tag (Ø)</span>
+                </div>
+                <div class="card kpi-card">
+                    <div class="kpi-icon orange">📆</div>
+                    <span class="kpi-value" id="kpiWeeklyAvg">0,0</span>
+                    <span class="kpi-label">km² pro Woche (Ø)</span>
+                </div>
+                <div class="card kpi-card">
+                    <div class="kpi-icon purple">🎯</div>
+                    <span class="kpi-value" id="kpiDaysRemaining">-</span>
+                    <span class="kpi-label">Tage bis Monatsende</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- EINGABE FORMULAR -->
+        <section class="input-section animate-in delay-3">
+            <h2 class="section-title">Neue Fläche erfassen</h2>
+            <p class="section-subtitle">Wähle die Gemeinde und Gemarkung aus, gib die Flur und die Fläche in m² ein.</p>
+            <div class="card input-card card-static">
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label class="input-label">Gemeinde / Stadt</label>
+                        <select class="input-select" id="gemeindeSelect">
+                            <option value="">Gemeinde wählen...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Gemarkung</label>
+                        <select class="input-select" id="gemarkungSelect" disabled>
+                            <option value="">Zuerst Gemeinde wählen...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Flur</label>
+                        <input type="text" class="input-field" id="flurInput" placeholder="z.B. 12">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Fläche</label>
+                        <div class="input-suffix">
+                            <input type="number" class="input-field" id="areaInput" placeholder="z.B. 5000" min="0"
+                                step="0.01">
+                            <span class="unit-label">m²</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="submitBtn">
+                        <span>✓</span> Fläche erfassen
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- HISTORIE TABELLE -->
+        <section class="history-section animate-in delay-4">
+            <div class="history-header">
+                <h2 class="section-title" style="margin-bottom: 0;">Historie</h2>
+                <button class="btn btn-secondary" id="clearAllBtn">Alle löschen</button>
+            </div>
+            <div class="card history-card card-static">
+                <div class="table-container">
+                    <table class="history-table" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>Datum & Zeit</th>
+                                <th>Gemeinde / Gemarkung / Flur</th>
+                                <th>Fläche (m²)</th>
+                                <th>Fläche (km²)</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-title">Keine Einträge vorhanden</div>
+                    <p>Erfasse deine erste Fläche, um sie hier zu sehen.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================
+         EDIT MODAL
+         ============================================ -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3 class="modal-title">Eintrag bearbeiten</h3>
+            <div class="modal-grid">
+                <div class="input-group">
+                    <label class="input-label">Gemeinde / Stadt</label>
+                    <select class="input-select" id="editGemeindeSelect">
+                        <option value="">Gemeinde wählen...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Gemarkung</label>
+                    <select class="input-select" id="editGemarkungSelect" disabled>
+                        <option value="">Zuerst Gemeinde wählen...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Flur</label>
+                    <input type="text" class="input-field" id="editFlurInput" placeholder="z.B. 12">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Fläche (m²)</label>
+                    <input type="number" class="input-field" id="editAreaInput" min="0" step="0.01">
+                </div>
+            </div>
+            <input type="hidden" id="editEntryId">
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelEditBtn">Abbrechen</button>
+                <button class="btn btn-primary" id="saveEditBtn">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         TOAST CONTAINER
+         ============================================ -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        /* ============================================
+           OFFIZIELLE GEMARKUNGEN - RHEIN-SIEG-KREIS
+           Quelle: Liste der Gemarkungen in NRW (Wikipedia)
+           Basierend auf Gemarkungsschlüssel 054xxx
+           ============================================ */
+        const KATASTER_DATA = {
+            // ========== STÄDTE ==========
+            "Bad Honnef": [
+                "Aegidienberg",
+                "Honnef"
+            ],
+            "Bornheim": [
+                "Bornheim-Brenig",
+                "Hersel",
+                "Kardorf-Hemmerich",
+                "Merten",
+                "Roisdorf",
+                "Sechtem",
+                "Uedorf",
+                "Walberberg",
+                "Widdig"
+            ],
+            "Hennef (Sieg)": [
+                "Allner",
+                "Altenbödingen",
+                "Blankenberg",
+                "Geistingen",
+                "Happerschoß",
+                "Kurscheid",
+                "Lauthausen",
+                "Lichtenberg",
+                "Söven",
+                "Striefen",
+                "Süchterscheid",
+                "Uckerath",
+                "Wellesberg"
+            ],
+            "Königswinter": [
+                "Berghausen",
+                "Eudenbach",
+                "Hasenpohl",
+                "Heisterbacherrott",
+                "Ittenbach",
+                "Königswinter",
+                "Niederdollendorf",
+                "Oberdollendorf",
+                "Oberhau",
+                "Oberpleis",
+                "Oelinghoven",
+                "Rauschendorf",
+                "Vinxel",
+                "Wahlfeld"
+            ],
+            "Lohmar": [
+                "Breidt",
+                "Halberg",
+                "Honrath",
+                "Inger",
+                "Lohmar",
+                "Scheiderhöhe",
+                "Wahlscheid"
+            ],
+            "Meckenheim": [
+                "Altendorf",
+                "Ersdorf",
+                "Lüftelberg",
+                "Meckenheim",
+                "Merl"
+            ],
+            "Niederkassel": [
+                "Lülsdorf",
+                "Mondorf",
+                "Niederkassel",
+                "Rheidt",
+                "Stockem",
+                "Uckendorf"
+            ],
+            "Rheinbach": [
+                "Flerzheim",
+                "Hilberath",
+                "Niederdrees",
+                "Oberdrees",
+                "Queckenberg",
+                "Ramershoven",
+                "Rheinbach",
+                "Wormersdorf"
+            ],
+            "Sankt Augustin": [
+                "Birlinghoven",
+                "Buisdorf",
+                "Hangelar",
+                "Meindorf",
+                "Niedermenden",
+                "Niederpleis",
+                "Obermenden",
+                "Siegburg-Mülldorf"
+            ],
+            "Siegburg": [
+                "Braschoß",
+                "Seligenthal",
+                "Siegburg",
+                "Wolsdorf"
+            ],
+            "Troisdorf": [
+                "Altenrath",
+                "Bergheim-Müllekoven",
+                "Höhe",
+                "Sieglar",
+                "Spich",
+                "Troisdorf"
+            ],
+
+            // ========== GEMEINDEN ==========
+            "Alfter": [
+                "Alfter",
+                "Gielsdorf",
+                "Impekoven",
+                "Oedekoven",
+                "Witterschlick"
+            ],
+            "Eitorf": [
+                "Eitorf",
+                "Halft",
+                "Linkenbach"
+            ],
+            "Much": [
+                "Bennrath",
+                "Bonrath",
+                "Gerlinghausen",
+                "Löbach",
+                "Markelsbach",
+                "Miebach",
+                "Much",
+                "Wersch"
+            ],
+            "Neunkirchen-Seelscheid": [
+                "Eischeid",
+                "Herkenrath",
+                "Seelscheid",
+                "Söntgerath",
+                "Wolperath"
+            ],
+            "Ruppichteroth": [
+                "Bröl",
+                "Dehrenbach",
+                "Ruppichteroth",
+                "Winterscheid"
+            ],
+            "Swisttal": [
+                "Buschhoven",
+                "Essig",
+                "Heimerzheim",
+                "Ludendorf",
+                "Miel",
+                "Morenhoven",
+                "Odendorf"
+            ],
+            "Wachtberg": [
+                "Adendorf",
+                "Arzdorf",
+                "Berkum",
+                "Fritzdorf",
+                "Gimmersdorf",
+                "Holzem",
+                "Ließem",
+                "Niederbachem",
+                "Oberbachem",
+                "Pech",
+                "Villip",
+                "Züllighoven"
+            ],
+            "Windeck": [
+                "Dattenfeld",
+                "Geilhausen",
+                "Herchen",
+                "Kohlberg",
+                "Leuscheid",
+                "Rosbach",
+                "Windeck"
+            ]
+        };
+
+        // Konfiguration
+        const CONFIG = {
+            TARGET_KM2: 4.5,
+            STORAGE_KEY: "flurmanager_entries",
+            M2_TO_KM2: 1000000
+        };
+
+        /* ============================================
+           DOM ELEMENTE
+           ============================================ */
+        const elements = {
+            gemeindeSelect: document.getElementById("gemeindeSelect"),
+            gemarkungSelect: document.getElementById("gemarkungSelect"),
+            flurInput: document.getElementById("flurInput"),
+            areaInput: document.getElementById("areaInput"),
+            submitBtn: document.getElementById("submitBtn"),
+            editGemeindeSelect: document.getElementById("editGemeindeSelect"),
+            editGemarkungSelect: document.getElementById("editGemarkungSelect"),
+            editFlurInput: document.getElementById("editFlurInput"),
+            editAreaInput: document.getElementById("editAreaInput"),
+            editEntryId: document.getElementById("editEntryId"),
+            editModal: document.getElementById("editModal"),
+            cancelEditBtn: document.getElementById("cancelEditBtn"),
+            saveEditBtn: document.getElementById("saveEditBtn"),
+            progressRing: document.getElementById("progressRing"),
+            progressPercent: document.getElementById("progressPercent"),
+            totalArea: document.getElementById("totalArea"),
+            remainingArea: document.getElementById("remainingArea"),
+            historyBody: document.getElementById("historyBody"),
+            emptyState: document.getElementById("emptyState"),
+            currentDate: document.getElementById("currentDate"),
+            kpiTotal: document.getElementById("kpiTotal"),
+            kpiDailyAvg: document.getElementById("kpiDailyAvg"),
+            kpiWeeklyAvg: document.getElementById("kpiWeeklyAvg"),
+            kpiDaysRemaining: document.getElementById("kpiDaysRemaining"),
+            clearAllBtn: document.getElementById("clearAllBtn"),
+            toastContainer: document.getElementById("toastContainer")
+        };
+
+        /* ============================================
+           HILFSFUNKTIONEN
+           ============================================ */
+
+        function showToast(message, type = "info") {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}</span><span>${message}</span>`;
+            elements.toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add("show"), 10);
+            setTimeout(() => {
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ALLE Werte auf 1 Nachkommastelle runden
+        function formatNumber(num) {
+            return num.toFixed(1).replace(".", ",");
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleDateString("de-DE", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function getDaysRemainingInMonth() {
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            return lastDay.getDate() - now.getDate();
+        }
+
+        function getDaysIntoMonth() {
+            return new Date().getDate();
+        }
+
+        /* ============================================
+           DATEN MANAGEMENT
+           ============================================ */
+
+        function loadEntries() {
+            try {
+                const data = localStorage.getItem(CONFIG.STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error("Fehler beim Laden:", e);
+                return [];
+            }
+        }
+
+        function saveEntries(entries) {
+            try {
+                localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(entries));
+            } catch (e) {
+                console.error("Fehler beim Speichern:", e);
+                showToast("Fehler beim Speichern!", "error");
+            }
+        }
+
+        function addEntry(entry) {
+            const entries = loadEntries();
+            entries.unshift(entry);
+            saveEntries(entries);
+            updateUI();
+            showToast("Fläche erfolgreich erfasst!", "success");
+        }
+
+        function updateEntry(id, updates) {
+            const entries = loadEntries();
+            const index = entries.findIndex(e => e.id === id);
+            if (index !== -1) {
+                entries[index] = { ...entries[index], ...updates };
+                saveEntries(entries);
+                updateUI();
+                showToast("Eintrag aktualisiert!", "success");
+            }
+        }
+
+        function deleteEntry(id) {
+            const entries = loadEntries();
+            const filtered = entries.filter(e => e.id !== id);
+            saveEntries(filtered);
+            updateUI();
+            showToast("Eintrag gelöscht!", "info");
+        }
+
+        function clearAllEntries() {
+            if (confirm("Möchtest du wirklich alle Einträge löschen?")) {
+                saveEntries([]);
+                updateUI();
+                showToast("Alle Einträge gelöscht!", "info");
+            }
+        }
+
+        /* ============================================
+           CASCADING DROPDOWNS
+           ============================================ */
+
+        function populateGemeindeOptions(selectElement) {
+            selectElement.innerHTML = '<option value="">Gemeinde wählen...</option>';
+            Object.keys(KATASTER_DATA).sort().forEach(gemeinde => {
+                const option = document.createElement("option");
+                option.value = gemeinde;
+                option.textContent = gemeinde;
+                selectElement.appendChild(option);
+            });
+        }
+
+        function populateGemarkungOptions(gemeinde, selectElement) {
+            selectElement.innerHTML = '<option value="">Gemarkung wählen...</option>';
+            if (gemeinde && KATASTER_DATA[gemeinde]) {
+                KATASTER_DATA[gemeinde].sort().forEach(gemarkung => {
+                    const option = document.createElement("option");
+                    option.value = gemarkung;
+                    option.textContent = gemarkung;
+                    selectElement.appendChild(option);
+                });
+                selectElement.disabled = false;
+            } else {
+                selectElement.disabled = true;
+            }
+        }
+
+        /* ============================================
+           UI UPDATE
+           ============================================ */
+
+        function calculateTotalArea() {
+            const entries = loadEntries();
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const monthlyEntries = entries.filter(entry => {
+                const entryDate = new Date(entry.timestamp);
+                return entryDate.getMonth() === currentMonth &&
+                    entryDate.getFullYear() === currentYear;
+            });
+
+            const totalM2 = monthlyEntries.reduce((sum, entry) => sum + entry.areaM2, 0);
+            return totalM2 / CONFIG.M2_TO_KM2;
+        }
+
+        function updateProgressRing(percentage) {
+            const circumference = 2 * Math.PI * 65;
+            const offset = circumference - (Math.min(percentage, 100) / 100) * circumference;
+            elements.progressRing.style.strokeDasharray = circumference;
+            elements.progressRing.style.strokeDashoffset = offset;
+            elements.progressPercent.textContent = `${Math.round(percentage)}%`;
+        }
+
+        function updateKPIs() {
+            const entries = loadEntries();
+            const totalKm2 = calculateTotalArea();
+            const remaining = Math.max(0, CONFIG.TARGET_KM2 - totalKm2);
+            const percentage = (totalKm2 / CONFIG.TARGET_KM2) * 100;
+            const daysIntoMonth = getDaysIntoMonth();
+            const daysRemaining = getDaysRemainingInMonth();
+
+            updateProgressRing(percentage);
+
+            // Alle km² Werte auf 1 Nachkommastelle
+            elements.totalArea.textContent = formatNumber(totalKm2);
+            elements.remainingArea.textContent = formatNumber(remaining);
+            elements.kpiTotal.textContent = entries.length;
+            elements.kpiDailyAvg.textContent = formatNumber(totalKm2 / daysIntoMonth);
+            elements.kpiWeeklyAvg.textContent = formatNumber((totalKm2 / daysIntoMonth) * 7);
+            elements.kpiDaysRemaining.textContent = daysRemaining;
+        }
+
+        function renderHistoryTable() {
+            const entries = loadEntries();
+
+            if (entries.length === 0) {
+                elements.historyBody.innerHTML = "";
+                elements.emptyState.style.display = "block";
+                document.getElementById("historyTable").querySelector("thead").style.display = "none";
+                return;
+            }
+
+            elements.emptyState.style.display = "none";
+            document.getElementById("historyTable").querySelector("thead").style.display = "";
+
+            elements.historyBody.innerHTML = entries.map(entry => `
+                <tr data-id="${entry.id}">
+                    <td>${formatDate(entry.timestamp)}</td>
+                    <td>
+                        <span class="location-tag">
+                            📍 ${entry.gemeinde} / ${entry.gemarkung} / Flur ${entry.flur}
+                        </span>
+                    </td>
+                    <td>${formatNumber(entry.areaM2)} m²</td>
+                    <td>${formatNumber(entry.areaM2 / CONFIG.M2_TO_KM2)} km²</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-icon btn-secondary edit-btn" title="Bearbeiten">✏️</button>
+                            <button class="btn btn-icon btn-danger delete-btn" title="Löschen">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+
+            elements.historyBody.querySelectorAll(".edit-btn").forEach(btn => {
+                btn.addEventListener("click", handleEditClick);
+            });
+
+            elements.historyBody.querySelectorAll(".delete-btn").forEach(btn => {
+                btn.addEventListener("click", handleDeleteClick);
+            });
+        }
+
+        function updateUI() {
+            updateKPIs();
+            renderHistoryTable();
+        }
+
+        /* ============================================
+           EVENT HANDLERS
+           ============================================ */
+
+        function handleSubmit() {
+            const gemeinde = elements.gemeindeSelect.value;
+            const gemarkung = elements.gemarkungSelect.value;
+            const flur = elements.flurInput.value.trim();
+            const areaM2 = parseFloat(elements.areaInput.value);
+
+            if (!gemeinde || !gemarkung) {
+                showToast("Bitte wähle Gemeinde und Gemarkung aus.", "error");
+                return;
+            }
+
+            if (!flur) {
+                showToast("Bitte gib eine Flurnummer ein.", "error");
+                return;
+            }
+
+            if (isNaN(areaM2) || areaM2 <= 0) {
+                showToast("Bitte gib eine gültige Fläche ein.", "error");
+                return;
+            }
+
+            addEntry({
+                id: generateId(),
+                gemeinde,
+                gemarkung,
+                flur,
+                areaM2,
+                timestamp: Date.now()
+            });
+
+            elements.gemeindeSelect.value = "";
+            elements.gemarkungSelect.value = "";
+            elements.gemarkungSelect.disabled = true;
+            elements.flurInput.value = "";
+            elements.areaInput.value = "";
+        }
+
+        function handleEditClick(e) {
+            const row = e.target.closest("tr");
+            const id = row.dataset.id;
+            const entries = loadEntries();
+            const entry = entries.find(e => e.id === id);
+
+            if (entry) {
+                elements.editEntryId.value = id;
+                elements.editGemeindeSelect.value = entry.gemeinde;
+                populateGemarkungOptions(entry.gemeinde, elements.editGemarkungSelect);
+                elements.editGemarkungSelect.value = entry.gemarkung;
+                elements.editFlurInput.value = entry.flur;
+                elements.editAreaInput.value = entry.areaM2;
+                elements.editModal.classList.add("active");
+            }
+        }
+
+        function handleDeleteClick(e) {
+            const row = e.target.closest("tr");
+            const id = row.dataset.id;
+            if (confirm("Möchtest du diesen Eintrag wirklich löschen?")) {
+                deleteEntry(id);
+            }
+        }
+
+        function handleSaveEdit() {
+            const id = elements.editEntryId.value;
+            const gemeinde = elements.editGemeindeSelect.value;
+            const gemarkung = elements.editGemarkungSelect.value;
+            const flur = elements.editFlurInput.value.trim();
+            const areaM2 = parseFloat(elements.editAreaInput.value);
+
+            if (!gemeinde || !gemarkung) {
+                showToast("Bitte wähle Gemeinde und Gemarkung aus.", "error");
+                return;
+            }
+
+            if (!flur) {
+                showToast("Bitte gib eine Flurnummer ein.", "error");
+                return;
+            }
+
+            if (isNaN(areaM2) || areaM2 <= 0) {
+                showToast("Bitte gib eine gültige Fläche ein.", "error");
+                return;
+            }
+
+            updateEntry(id, { gemeinde, gemarkung, flur, areaM2 });
+            elements.editModal.classList.remove("active");
+        }
+
+        function handleCloseModal() {
+            elements.editModal.classList.remove("active");
+        }
+
+        /* ============================================
+           INITIALISIERUNG
+           ============================================ */
+
+        function init() {
+            const now = new Date();
+            elements.currentDate.textContent = now.toLocaleDateString("de-DE", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+
+            populateGemeindeOptions(elements.gemeindeSelect);
+            populateGemeindeOptions(elements.editGemeindeSelect);
+
+            elements.gemeindeSelect.addEventListener("change", (e) => {
+                populateGemarkungOptions(e.target.value, elements.gemarkungSelect);
+            });
+
+            elements.editGemeindeSelect.addEventListener("change", (e) => {
+                populateGemarkungOptions(e.target.value, elements.editGemarkungSelect);
+            });
+
+            elements.submitBtn.addEventListener("click", handleSubmit);
+            elements.clearAllBtn.addEventListener("click", clearAllEntries);
+            elements.saveEditBtn.addEventListener("click", handleSaveEdit);
+            elements.cancelEditBtn.addEventListener("click", handleCloseModal);
+
+            elements.editModal.addEventListener("click", (e) => {
+                if (e.target === elements.editModal) handleCloseModal();
+            });
+
+            elements.areaInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") handleSubmit();
+            });
+
+            elements.flurInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") elements.areaInput.focus();
+            });
+
+            updateUI();
+
+            setTimeout(() => {
+                const totalKm2 = calculateTotalArea();
+                const percentage = (totalKm2 / CONFIG.TARGET_KM2) * 100;
+                updateProgressRing(percentage);
+            }, 500);
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

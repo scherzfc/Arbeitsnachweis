@@ -1657,8 +1657,13 @@
                 showToast("Fehler beim Starten der App!", "error");
             }
         }
-
-        document.addEventListener("DOMContentLoaded", init);
+        // Robuste Initialisierung - funktioniert auch wenn DOMContentLoaded schon gefeuert wurde
+        if (document.readyState === 'loading') {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            // DOM ist bereits geladen, direkt initialisieren
+            init();
+        }
     </script>
 </body>
 

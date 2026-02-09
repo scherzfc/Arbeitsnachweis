@@ -1178,40 +1178,45 @@
         let entries = [];
 
         /* ============================================
-           DOM ELEMENTE
+           DOM ELEMENTE (werden in init() initialisiert)
            ============================================ */
-        const elements = {
-            loadingOverlay: document.getElementById("loadingOverlay"),
-            syncDot: document.getElementById("syncDot"),
-            syncText: document.getElementById("syncText"),
-            gemeindeSelect: document.getElementById("gemeindeSelect"),
-            gemarkungSelect: document.getElementById("gemarkungSelect"),
-            flurInput: document.getElementById("flurInput"),
-            areaInput: document.getElementById("areaInput"),
-            submitBtn: document.getElementById("submitBtn"),
-            editGemeindeSelect: document.getElementById("editGemeindeSelect"),
-            editGemarkungSelect: document.getElementById("editGemarkungSelect"),
-            editFlurInput: document.getElementById("editFlurInput"),
-            editAreaInput: document.getElementById("editAreaInput"),
-            editEntryId: document.getElementById("editEntryId"),
-            editModal: document.getElementById("editModal"),
-            cancelEditBtn: document.getElementById("cancelEditBtn"),
-            saveEditBtn: document.getElementById("saveEditBtn"),
-            progressRing: document.getElementById("progressRing"),
-            progressPercent: document.getElementById("progressPercent"),
-            progressTitle: document.getElementById("progressTitle"),
-            totalArea: document.getElementById("totalArea"),
-            remainingArea: document.getElementById("remainingArea"),
-            historyBody: document.getElementById("historyBody"),
-            emptyState: document.getElementById("emptyState"),
-            currentDate: document.getElementById("currentDate"),
-            kpiTotal: document.getElementById("kpiTotal"),
-            kpiDailyAvg: document.getElementById("kpiDailyAvg"),
-            kpiWeeklyAvg: document.getElementById("kpiWeeklyAvg"),
-            kpiDaysRemaining: document.getElementById("kpiDaysRemaining"),
-            clearAllBtn: document.getElementById("clearAllBtn"),
-            toastContainer: document.getElementById("toastContainer")
-        };
+        let elements = null;
+
+        function initElements() {
+            elements = {
+                loadingOverlay: document.getElementById("loadingOverlay"),
+                syncDot: document.getElementById("syncDot"),
+                syncText: document.getElementById("syncText"),
+                gemeindeSelect: document.getElementById("gemeindeSelect"),
+                gemarkungSelect: document.getElementById("gemarkungSelect"),
+                flurInput: document.getElementById("flurInput"),
+                areaInput: document.getElementById("areaInput"),
+                submitBtn: document.getElementById("submitBtn"),
+                editGemeindeSelect: document.getElementById("editGemeindeSelect"),
+                editGemarkungSelect: document.getElementById("editGemarkungSelect"),
+                editFlurInput: document.getElementById("editFlurInput"),
+                editAreaInput: document.getElementById("editAreaInput"),
+                editEntryId: document.getElementById("editEntryId"),
+                editModal: document.getElementById("editModal"),
+                cancelEditBtn: document.getElementById("cancelEditBtn"),
+                saveEditBtn: document.getElementById("saveEditBtn"),
+                progressRing: document.getElementById("progressRing"),
+                progressPercent: document.getElementById("progressPercent"),
+                progressTitle: document.getElementById("progressTitle"),
+                totalArea: document.getElementById("totalArea"),
+                remainingArea: document.getElementById("remainingArea"),
+                historyBody: document.getElementById("historyBody"),
+                emptyState: document.getElementById("emptyState"),
+                currentDate: document.getElementById("currentDate"),
+                kpiTotal: document.getElementById("kpiTotal"),
+                kpiDailyAvg: document.getElementById("kpiDailyAvg"),
+                kpiWeeklyAvg: document.getElementById("kpiWeeklyAvg"),
+                kpiDaysRemaining: document.getElementById("kpiDaysRemaining"),
+                clearAllBtn: document.getElementById("clearAllBtn"),
+                toastContainer: document.getElementById("toastContainer")
+            };
+        }
+
 
         /* ============================================
            HILFSFUNKTIONEN
@@ -1579,6 +1584,9 @@
            INITIALISIERUNG
            ============================================ */
         async function init() {
+            // DOM Elemente initialisieren
+            initElements();
+
             const overlay = document.getElementById("loadingOverlay");
 
             // Timeout: Falls Supabase nicht lädt, Overlay nach 10 Sekunden verstecken
@@ -1587,6 +1595,7 @@
                 updateSyncStatus(false);
                 showToast("Verbindung fehlgeschlagen - Offline-Modus", "error");
             }, 10000);
+
 
             try {
                 // Supabase Client initialisieren

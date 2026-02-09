@@ -138,6 +138,44 @@
             font-weight: 400;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--apple-green);
+        }
+
+        .sync-dot.offline {
+            background: var(--apple-orange);
+        }
+
+        .sync-dot.syncing {
+            background: var(--apple-blue);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         .header-date {
             font-size: 14px;
             color: var(--text-secondary);
@@ -477,6 +515,13 @@
             transform: scale(0.98);
         }
 
+        .btn-primary:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: var(--bg-tertiary);
             color: var(--text-primary);
@@ -593,6 +638,46 @@
             font-weight: 600;
             margin-bottom: 8px;
             color: var(--text-primary);
+        }
+
+        /* ============================================
+           LOADING STATE
+           ============================================ */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-tertiary);
+            border-top-color: var(--apple-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 14px;
         }
 
         /* ============================================
@@ -783,6 +868,10 @@
                 flex-direction: column;
                 gap: 16px;
             }
+
+            .sync-status {
+                display: none;
+            }
         }
 
         /* ============================================
@@ -827,6 +916,12 @@
 </head>
 
 <body>
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Verbinde mit Firebase...</div>
+    </div>
+
     <!-- ============================================
          HEADER MIT GLASEFFEKT
          ============================================ -->
@@ -839,7 +934,13 @@
                     <div class="logo-subtitle">Rhein-Sieg-Kreis</div>
                 </div>
             </div>
-            <div class="header-date" id="currentDate"></div>
+            <div class="header-right">
+                <div class="sync-status" id="syncStatus">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <span id="syncText">Verbunden</span>
+                </div>
+                <div class="header-date" id="currentDate"></div>
+            </div>
         </div>
     </header>
 
@@ -868,7 +969,7 @@
                     </div>
                 </div>
                 <div class="progress-details">
-                    <h3 class="progress-title">Flächenerfassung Februar 2026</h3>
+                    <h3 class="progress-title" id="progressTitle">Flächenerfassung Februar 2026</h3>
                     <p class="progress-description">
                         Erfasse Flächen aus Vermessungen und Fortführungen, um das monatliche Ziel von 4,5 km² zu
                         erreichen.
@@ -1029,202 +1130,84 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ============================================
-         JAVASCRIPT
+         FIREBASE SDK
          ============================================ -->
-    <script>
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            doc, 
+            onSnapshot,
+            query,
+            orderBy,
+            writeBatch
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        // Firebase Konfiguration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAP-2uhyw2gHsn9G7-x0y_qqVSv3EZ-3M",
+            authDomain: "flurmanager.firebaseapp.com",
+            projectId: "flurmanager",
+            storageBucket: "flurmanager.firebasestorage.app",
+            messagingSenderId: "137745776898",
+            appId: "1:137745776898:web:4686007b6cf6db730b021b",
+            measurementId: "G-D06JXQJMXR"
+        };
+
+        // Firebase initialisieren
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const entriesCollection = collection(db, 'entries');
+
         /* ============================================
            OFFIZIELLE GEMARKUNGEN - RHEIN-SIEG-KREIS
-           Quelle: Liste der Gemarkungen in NRW (Wikipedia)
-           Basierend auf Gemarkungsschlüssel 054xxx
            ============================================ */
         const KATASTER_DATA = {
             // ========== STÄDTE ==========
-            "Bad Honnef": [
-                "Aegidienberg",
-                "Honnef"
-            ],
-            "Bornheim": [
-                "Bornheim-Brenig",
-                "Hersel",
-                "Kardorf-Hemmerich",
-                "Merten",
-                "Roisdorf",
-                "Sechtem",
-                "Uedorf",
-                "Walberberg",
-                "Widdig"
-            ],
-            "Hennef (Sieg)": [
-                "Allner",
-                "Altenbödingen",
-                "Blankenberg",
-                "Geistingen",
-                "Happerschoß",
-                "Kurscheid",
-                "Lauthausen",
-                "Lichtenberg",
-                "Söven",
-                "Striefen",
-                "Süchterscheid",
-                "Uckerath",
-                "Wellesberg"
-            ],
-            "Königswinter": [
-                "Berghausen",
-                "Eudenbach",
-                "Hasenpohl",
-                "Heisterbacherrott",
-                "Ittenbach",
-                "Königswinter",
-                "Niederdollendorf",
-                "Oberdollendorf",
-                "Oberhau",
-                "Oberpleis",
-                "Oelinghoven",
-                "Rauschendorf",
-                "Vinxel",
-                "Wahlfeld"
-            ],
-            "Lohmar": [
-                "Breidt",
-                "Halberg",
-                "Honrath",
-                "Inger",
-                "Lohmar",
-                "Scheiderhöhe",
-                "Wahlscheid"
-            ],
-            "Meckenheim": [
-                "Altendorf",
-                "Ersdorf",
-                "Lüftelberg",
-                "Meckenheim",
-                "Merl"
-            ],
-            "Niederkassel": [
-                "Lülsdorf",
-                "Mondorf",
-                "Niederkassel",
-                "Rheidt",
-                "Stockem",
-                "Uckendorf"
-            ],
-            "Rheinbach": [
-                "Flerzheim",
-                "Hilberath",
-                "Niederdrees",
-                "Oberdrees",
-                "Queckenberg",
-                "Ramershoven",
-                "Rheinbach",
-                "Wormersdorf"
-            ],
-            "Sankt Augustin": [
-                "Birlinghoven",
-                "Buisdorf",
-                "Hangelar",
-                "Meindorf",
-                "Niedermenden",
-                "Niederpleis",
-                "Obermenden",
-                "Siegburg-Mülldorf"
-            ],
-            "Siegburg": [
-                "Braschoß",
-                "Seligenthal",
-                "Siegburg",
-                "Wolsdorf"
-            ],
-            "Troisdorf": [
-                "Altenrath",
-                "Bergheim-Müllekoven",
-                "Höhe",
-                "Sieglar",
-                "Spich",
-                "Troisdorf"
-            ],
-
+            "Bad Honnef": ["Aegidienberg", "Honnef"],
+            "Bornheim": ["Bornheim-Brenig", "Hersel", "Kardorf-Hemmerich", "Merten", "Roisdorf", "Sechtem", "Uedorf", "Walberberg", "Widdig"],
+            "Hennef (Sieg)": ["Allner", "Altenbödingen", "Blankenberg", "Geistingen", "Happerschoß", "Kurscheid", "Lauthausen", "Lichtenberg", "Söven", "Striefen", "Süchterscheid", "Uckerath", "Wellesberg"],
+            "Königswinter": ["Berghausen", "Eudenbach", "Hasenpohl", "Heisterbacherrott", "Ittenbach", "Königswinter", "Niederdollendorf", "Oberdollendorf", "Oberhau", "Oberpleis", "Oelinghoven", "Rauschendorf", "Vinxel", "Wahlfeld"],
+            "Lohmar": ["Breidt", "Halberg", "Honrath", "Inger", "Lohmar", "Scheiderhöhe", "Wahlscheid"],
+            "Meckenheim": ["Altendorf", "Ersdorf", "Lüftelberg", "Meckenheim", "Merl"],
+            "Niederkassel": ["Lülsdorf", "Mondorf", "Niederkassel", "Rheidt", "Stockem", "Uckendorf"],
+            "Rheinbach": ["Flerzheim", "Hilberath", "Niederdrees", "Oberdrees", "Queckenberg", "Ramershoven", "Rheinbach", "Wormersdorf"],
+            "Sankt Augustin": ["Birlinghoven", "Buisdorf", "Hangelar", "Meindorf", "Niedermenden", "Niederpleis", "Obermenden", "Siegburg-Mülldorf"],
+            "Siegburg": ["Braschoß", "Seligenthal", "Siegburg", "Wolsdorf"],
+            "Troisdorf": ["Altenrath", "Bergheim-Müllekoven", "Höhe", "Sieglar", "Spich", "Troisdorf"],
             // ========== GEMEINDEN ==========
-            "Alfter": [
-                "Alfter",
-                "Gielsdorf",
-                "Impekoven",
-                "Oedekoven",
-                "Witterschlick"
-            ],
-            "Eitorf": [
-                "Eitorf",
-                "Halft",
-                "Linkenbach"
-            ],
-            "Much": [
-                "Bennrath",
-                "Bonrath",
-                "Gerlinghausen",
-                "Löbach",
-                "Markelsbach",
-                "Miebach",
-                "Much",
-                "Wersch"
-            ],
-            "Neunkirchen-Seelscheid": [
-                "Eischeid",
-                "Herkenrath",
-                "Seelscheid",
-                "Söntgerath",
-                "Wolperath"
-            ],
-            "Ruppichteroth": [
-                "Bröl",
-                "Dehrenbach",
-                "Ruppichteroth",
-                "Winterscheid"
-            ],
-            "Swisttal": [
-                "Buschhoven",
-                "Essig",
-                "Heimerzheim",
-                "Ludendorf",
-                "Miel",
-                "Morenhoven",
-                "Odendorf"
-            ],
-            "Wachtberg": [
-                "Adendorf",
-                "Arzdorf",
-                "Berkum",
-                "Fritzdorf",
-                "Gimmersdorf",
-                "Holzem",
-                "Ließem",
-                "Niederbachem",
-                "Oberbachem",
-                "Pech",
-                "Villip",
-                "Züllighoven"
-            ],
-            "Windeck": [
-                "Dattenfeld",
-                "Geilhausen",
-                "Herchen",
-                "Kohlberg",
-                "Leuscheid",
-                "Rosbach",
-                "Windeck"
-            ]
+            "Alfter": ["Alfter", "Gielsdorf", "Impekoven", "Oedekoven", "Witterschlick"],
+            "Eitorf": ["Eitorf", "Halft", "Linkenbach"],
+            "Much": ["Bennrath", "Bonrath", "Gerlinghausen", "Löbach", "Markelsbach", "Miebach", "Much", "Wersch"],
+            "Neunkirchen-Seelscheid": ["Eischeid", "Herkenrath", "Seelscheid", "Söntgerath", "Wolperath"],
+            "Ruppichteroth": ["Bröl", "Dehrenbach", "Ruppichteroth", "Winterscheid"],
+            "Swisttal": ["Buschhoven", "Essig", "Heimerzheim", "Ludendorf", "Miel", "Morenhoven", "Odendorf"],
+            "Wachtberg": ["Adendorf", "Arzdorf", "Berkum", "Fritzdorf", "Gimmersdorf", "Holzem", "Ließem", "Niederbachem", "Oberbachem", "Pech", "Villip", "Züllighoven"],
+            "Windeck": ["Dattenfeld", "Geilhausen", "Herchen", "Kohlberg", "Leuscheid", "Rosbach", "Windeck"]
         };
 
         // Konfiguration
         const CONFIG = {
             TARGET_KM2: 4.5,
-            STORAGE_KEY: "flurmanager_entries",
             M2_TO_KM2: 1000000
         };
+
+        // Globale Daten
+        let entries = [];
+        let isConnected = false;
 
         /* ============================================
            DOM ELEMENTE
            ============================================ */
         const elements = {
+            loadingOverlay: document.getElementById("loadingOverlay"),
+            syncDot: document.getElementById("syncDot"),
+            syncText: document.getElementById("syncText"),
             gemeindeSelect: document.getElementById("gemeindeSelect"),
             gemarkungSelect: document.getElementById("gemarkungSelect"),
             flurInput: document.getElementById("flurInput"),
@@ -1240,6 +1223,7 @@
             saveEditBtn: document.getElementById("saveEditBtn"),
             progressRing: document.getElementById("progressRing"),
             progressPercent: document.getElementById("progressPercent"),
+            progressTitle: document.getElementById("progressTitle"),
             totalArea: document.getElementById("totalArea"),
             remainingArea: document.getElementById("remainingArea"),
             historyBody: document.getElementById("historyBody"),
@@ -1269,7 +1253,6 @@
             }, 3000);
         }
 
-        // ALLE Werte auf 1 Nachkommastelle runden
         function formatNumber(num) {
             return num.toFixed(1).replace(".", ",");
         }
@@ -1285,10 +1268,6 @@
             });
         }
 
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
         function getDaysRemainingInMonth() {
             const now = new Date();
             const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -1299,62 +1278,114 @@
             return new Date().getDate();
         }
 
+        function getMonthName() {
+            const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", 
+                           "Juli", "August", "September", "Oktober", "November", "Dezember"];
+            return months[new Date().getMonth()];
+        }
+
+        function updateSyncStatus(connected, syncing = false) {
+            isConnected = connected;
+            if (syncing) {
+                elements.syncDot.className = "sync-dot syncing";
+                elements.syncText.textContent = "Synchronisiere...";
+            } else if (connected) {
+                elements.syncDot.className = "sync-dot";
+                elements.syncText.textContent = "Verbunden";
+            } else {
+                elements.syncDot.className = "sync-dot offline";
+                elements.syncText.textContent = "Offline";
+            }
+        }
+
         /* ============================================
-           DATEN MANAGEMENT
+           FIREBASE OPERATIONEN
            ============================================ */
 
-        function loadEntries() {
+        async function addEntryToFirebase(entry) {
             try {
-                const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                console.error("Fehler beim Laden:", e);
-                return [];
-            }
-        }
-
-        function saveEntries(entries) {
-            try {
-                localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(entries));
-            } catch (e) {
-                console.error("Fehler beim Speichern:", e);
+                updateSyncStatus(true, true);
+                await addDoc(entriesCollection, entry);
+                showToast("Fläche erfolgreich erfasst!", "success");
+            } catch (error) {
+                console.error("Fehler beim Hinzufügen:", error);
                 showToast("Fehler beim Speichern!", "error");
+            } finally {
+                updateSyncStatus(true);
             }
         }
 
-        function addEntry(entry) {
-            const entries = loadEntries();
-            entries.unshift(entry);
-            saveEntries(entries);
-            updateUI();
-            showToast("Fläche erfolgreich erfasst!", "success");
-        }
-
-        function updateEntry(id, updates) {
-            const entries = loadEntries();
-            const index = entries.findIndex(e => e.id === id);
-            if (index !== -1) {
-                entries[index] = { ...entries[index], ...updates };
-                saveEntries(entries);
-                updateUI();
+        async function updateEntryInFirebase(id, updates) {
+            try {
+                updateSyncStatus(true, true);
+                const docRef = doc(db, 'entries', id);
+                await updateDoc(docRef, updates);
                 showToast("Eintrag aktualisiert!", "success");
+            } catch (error) {
+                console.error("Fehler beim Aktualisieren:", error);
+                showToast("Fehler beim Aktualisieren!", "error");
+            } finally {
+                updateSyncStatus(true);
             }
         }
 
-        function deleteEntry(id) {
-            const entries = loadEntries();
-            const filtered = entries.filter(e => e.id !== id);
-            saveEntries(filtered);
-            updateUI();
-            showToast("Eintrag gelöscht!", "info");
+        async function deleteEntryFromFirebase(id) {
+            try {
+                updateSyncStatus(true, true);
+                const docRef = doc(db, 'entries', id);
+                await deleteDoc(docRef);
+                showToast("Eintrag gelöscht!", "info");
+            } catch (error) {
+                console.error("Fehler beim Löschen:", error);
+                showToast("Fehler beim Löschen!", "error");
+            } finally {
+                updateSyncStatus(true);
+            }
         }
 
-        function clearAllEntries() {
-            if (confirm("Möchtest du wirklich alle Einträge löschen?")) {
-                saveEntries([]);
-                updateUI();
+        async function clearAllEntriesFromFirebase() {
+            if (!confirm("Möchtest du wirklich alle Einträge löschen?")) return;
+            
+            try {
+                updateSyncStatus(true, true);
+                const batch = writeBatch(db);
+                entries.forEach(entry => {
+                    const docRef = doc(db, 'entries', entry.id);
+                    batch.delete(docRef);
+                });
+                await batch.commit();
                 showToast("Alle Einträge gelöscht!", "info");
+            } catch (error) {
+                console.error("Fehler beim Löschen aller Einträge:", error);
+                showToast("Fehler beim Löschen!", "error");
+            } finally {
+                updateSyncStatus(true);
             }
+        }
+
+        /* ============================================
+           ECHTZEIT-LISTENER
+           ============================================ */
+
+        function setupRealtimeListener() {
+            const q = query(entriesCollection, orderBy('timestamp', 'desc'));
+            
+            onSnapshot(q, (snapshot) => {
+                elements.loadingOverlay.classList.add("hidden");
+                updateSyncStatus(true);
+                
+                entries = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                updateUI();
+            }, (error) => {
+                console.error("Firestore Fehler:", error);
+                elements.loadingOverlay.classList.add("hidden");
+                updateSyncStatus(false);
+                showToast("Verbindungsfehler zu Firebase!", "error");
+            });
         }
 
         /* ============================================
@@ -1391,7 +1422,6 @@
            ============================================ */
 
         function calculateTotalArea() {
-            const entries = loadEntries();
             const now = new Date();
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
@@ -1415,7 +1445,6 @@
         }
 
         function updateKPIs() {
-            const entries = loadEntries();
             const totalKm2 = calculateTotalArea();
             const remaining = Math.max(0, CONFIG.TARGET_KM2 - totalKm2);
             const percentage = (totalKm2 / CONFIG.TARGET_KM2) * 100;
@@ -1424,18 +1453,16 @@
 
             updateProgressRing(percentage);
 
-            // Alle km² Werte auf 1 Nachkommastelle
+            elements.progressTitle.textContent = `Flächenerfassung ${getMonthName()} ${new Date().getFullYear()}`;
             elements.totalArea.textContent = formatNumber(totalKm2);
             elements.remainingArea.textContent = formatNumber(remaining);
             elements.kpiTotal.textContent = entries.length;
-            elements.kpiDailyAvg.textContent = formatNumber(totalKm2 / daysIntoMonth);
-            elements.kpiWeeklyAvg.textContent = formatNumber((totalKm2 / daysIntoMonth) * 7);
+            elements.kpiDailyAvg.textContent = formatNumber(totalKm2 / Math.max(daysIntoMonth, 1));
+            elements.kpiWeeklyAvg.textContent = formatNumber((totalKm2 / Math.max(daysIntoMonth, 1)) * 7);
             elements.kpiDaysRemaining.textContent = daysRemaining;
         }
 
         function renderHistoryTable() {
-            const entries = loadEntries();
-
             if (entries.length === 0) {
                 elements.historyBody.innerHTML = "";
                 elements.emptyState.style.display = "block";
@@ -1504,8 +1531,7 @@
                 return;
             }
 
-            addEntry({
-                id: generateId(),
+            addEntryToFirebase({
                 gemeinde,
                 gemarkung,
                 flur,
@@ -1523,7 +1549,6 @@
         function handleEditClick(e) {
             const row = e.target.closest("tr");
             const id = row.dataset.id;
-            const entries = loadEntries();
             const entry = entries.find(e => e.id === id);
 
             if (entry) {
@@ -1541,7 +1566,7 @@
             const row = e.target.closest("tr");
             const id = row.dataset.id;
             if (confirm("Möchtest du diesen Eintrag wirklich löschen?")) {
-                deleteEntry(id);
+                deleteEntryFromFirebase(id);
             }
         }
 
@@ -1567,7 +1592,7 @@
                 return;
             }
 
-            updateEntry(id, { gemeinde, gemarkung, flur, areaM2 });
+            updateEntryInFirebase(id, { gemeinde, gemarkung, flur, areaM2 });
             elements.editModal.classList.remove("active");
         }
 
@@ -1600,7 +1625,7 @@
             });
 
             elements.submitBtn.addEventListener("click", handleSubmit);
-            elements.clearAllBtn.addEventListener("click", clearAllEntries);
+            elements.clearAllBtn.addEventListener("click", clearAllEntriesFromFirebase);
             elements.saveEditBtn.addEventListener("click", handleSaveEdit);
             elements.cancelEditBtn.addEventListener("click", handleCloseModal);
 
@@ -1616,13 +1641,8 @@
                 if (e.key === "Enter") elements.areaInput.focus();
             });
 
-            updateUI();
-
-            setTimeout(() => {
-                const totalKm2 = calculateTotalArea();
-                const percentage = (totalKm2 / CONFIG.TARGET_KM2) * 100;
-                updateProgressRing(percentage);
-            }, 500);
+            // Starte Echtzeit-Listener
+            setupRealtimeListener();
         }
 
         document.addEventListener("DOMContentLoaded", init);

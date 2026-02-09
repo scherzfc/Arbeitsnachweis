@@ -1288,16 +1288,16 @@
                 if (error) throw error;
 
                 entries = data || [];
-                // Direkt auf das Element zugreifen und verstecken
+                // Overlay komplett aus DOM entfernen
                 const overlay = document.getElementById("loadingOverlay");
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.remove();
                 updateSyncStatus(true);
                 updateUI();
             } catch (error) {
                 console.error("Fehler beim Laden:", error);
-                // Overlay auch bei Fehler verstecken
+                // Overlay auch bei Fehler entfernen
                 const overlay = document.getElementById("loadingOverlay");
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.remove();
                 updateSyncStatus(false);
                 showToast("Fehler beim Laden der Daten!", "error");
             }
@@ -1591,7 +1591,7 @@
 
             // Timeout: Falls Supabase nicht lädt, Overlay nach 10 Sekunden verstecken
             const timeoutId = setTimeout(() => {
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.remove();
                 updateSyncStatus(false);
                 showToast("Verbindung fehlgeschlagen - Offline-Modus", "error");
             }, 10000);
@@ -1645,7 +1645,7 @@
             } catch (error) {
                 console.error("Initialisierungsfehler:", error);
                 clearTimeout(timeoutId);
-                if (overlay) overlay.style.display = 'none';
+                if (overlay) overlay.remove();
                 updateSyncStatus(false);
                 showToast("Fehler beim Starten der App!", "error");
             }

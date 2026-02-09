@@ -1141,7 +1141,9 @@
         const SUPABASE_URL = 'https://tzopcotsctuximgcxvoo.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6b3Bjb3RzY3R1eGltZ2N4dm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjY4NDMsImV4cCI6MjA4NjIwMjg0M30.O13d8LR0m02DwJ2e48fGNvUW0i1IJkkoqI6E3Z2jRe0';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabase Client wird später initialisiert
+        let supabase = null;
+
 
         /* ============================================
            GEMARKUNGEN DATEN
@@ -1576,42 +1578,68 @@
         /* ============================================
            INITIALISIERUNG
            ============================================ */
-        function init() {
-            const now = new Date();
-            elements.currentDate.textContent = now.toLocaleDateString("de-DE", {
-                weekday: "long", year: "numeric", month: "long", day: "numeric"
-            });
+        async function init() {
+            const overlay = document.getElementById("loadingOverlay");
 
-            populateGemeindeOptions(elements.gemeindeSelect);
-            populateGemeindeOptions(elements.editGemeindeSelect);
+            // Timeout: Falls Supabase nicht lädt, Overlay nach 10 Sekunden verstecken
+            const timeoutId = setTimeout(() => {
+                if (overlay) overlay.classList.add("hidden");
+                updateSyncStatus(false);
+                showToast("Verbindung fehlgeschlagen - Offline-Modus", "error");
+            }, 10000);
 
-            elements.gemeindeSelect.addEventListener("change", (e) => {
-                populateGemarkungOptions(e.target.value, elements.gemarkungSelect);
-            });
+            try {
+                // Supabase Client initialisieren
+                if (window.supabase && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    throw new Error("Supabase SDK nicht geladen");
+                }
 
-            elements.editGemeindeSelect.addEventListener("change", (e) => {
-                populateGemarkungOptions(e.target.value, elements.editGemarkungSelect);
-            });
+                const now = new Date();
+                elements.currentDate.textContent = now.toLocaleDateString("de-DE", {
+                    weekday: "long", year: "numeric", month: "long", day: "numeric"
+                });
 
-            elements.submitBtn.addEventListener("click", handleSubmit);
-            elements.clearAllBtn.addEventListener("click", clearAllEntries);
-            elements.saveEditBtn.addEventListener("click", handleSaveEdit);
-            elements.cancelEditBtn.addEventListener("click", handleCloseModal);
+                populateGemeindeOptions(elements.gemeindeSelect);
+                populateGemeindeOptions(elements.editGemeindeSelect);
 
-            elements.editModal.addEventListener("click", (e) => {
-                if (e.target === elements.editModal) handleCloseModal();
-            });
+                elements.gemeindeSelect.addEventListener("change", (e) => {
+                    populateGemarkungOptions(e.target.value, elements.gemarkungSelect);
+                });
 
-            elements.areaInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") handleSubmit();
-            });
+                elements.editGemeindeSelect.addEventListener("change", (e) => {
+                    populateGemarkungOptions(e.target.value, elements.editGemarkungSelect);
+                });
 
-            elements.flurInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") elements.areaInput.focus();
-            });
+                elements.submitBtn.addEventListener("click", handleSubmit);
+                elements.clearAllBtn.addEventListener("click", clearAllEntries);
+                elements.saveEditBtn.addEventListener("click", handleSaveEdit);
+                elements.cancelEditBtn.addEventListener("click", handleCloseModal);
 
-            // Daten laden
-            loadEntries();
+                elements.editModal.addEventListener("click", (e) => {
+                    if (e.target === elements.editModal) handleCloseModal();
+                });
+
+                elements.areaInput.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") handleSubmit();
+                });
+
+                elements.flurInput.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") elements.areaInput.focus();
+                });
+
+                // Daten laden
+                await loadEntries();
+                clearTimeout(timeoutId);
+
+            } catch (error) {
+                console.error("Initialisierungsfehler:", error);
+                clearTimeout(timeoutId);
+                if (overlay) overlay.classList.add("hidden");
+                updateSyncStatus(false);
+                showToast("Fehler beim Starten der App!", "error");
+            }
         }
 
         document.addEventListener("DOMContentLoaded", init);

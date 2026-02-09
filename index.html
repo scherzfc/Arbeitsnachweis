@@ -1288,9 +1288,16 @@
                 if (error) throw error;
 
                 entries = data || [];
-                // Overlay komplett aus DOM entfernen
+                // Overlay komplett entfernen - mit Debug-Ausgabe
                 const overlay = document.getElementById("loadingOverlay");
-                if (overlay) overlay.remove();
+                console.log("DEBUG: overlay element:", overlay);
+                if (overlay) {
+                    overlay.style.display = 'none';
+                    overlay.remove();
+                    console.log("DEBUG: overlay removed successfully");
+                } else {
+                    console.log("DEBUG: overlay was NULL!");
+                }
                 updateSyncStatus(true);
                 updateUI();
             } catch (error) {

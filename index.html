@@ -8,6 +8,9 @@
     <meta name="description"
         content="Produktivitätstool für das Katasteramt zur Erfassung und Auswertung von Flächendaten im Rhein-Sieg-Kreis">
 
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         /* ============================================
            CSS VARIABLEN - APPLE DESIGN SYSTEM
@@ -172,8 +175,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .header-date {
@@ -672,7 +682,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .loading-text {
@@ -919,12 +931,10 @@
     <!-- LOADING OVERLAY -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Verbinde mit Firebase...</div>
+        <div class="loading-text">Verbinde mit Supabase...</div>
     </div>
 
-    <!-- ============================================
-         HEADER MIT GLASEFFEKT
-         ============================================ -->
+    <!-- HEADER -->
     <header>
         <div class="header-content">
             <div class="logo">
@@ -944,9 +954,7 @@
         </div>
     </header>
 
-    <!-- ============================================
-         HAUPTINHALT
-         ============================================ -->
+    <!-- HAUPTINHALT -->
     <main>
         <!-- FORTSCHRITTS-RING SEKTION -->
         <section class="progress-section animate-in delay-1">
@@ -1088,9 +1096,7 @@
         </section>
     </main>
 
-    <!-- ============================================
-         EDIT MODAL
-         ============================================ -->
+    <!-- EDIT MODAL -->
     <div class="modal-overlay" id="editModal">
         <div class="modal">
             <h3 class="modal-title">Eintrag bearbeiten</h3>
@@ -1124,51 +1130,23 @@
         </div>
     </div>
 
-    <!-- ============================================
-         TOAST CONTAINER
-         ============================================ -->
+    <!-- TOAST CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ============================================
-         FIREBASE SDK
-         ============================================ -->
-    <script type="module">
-        // Firebase SDK imports
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            updateDoc, 
-            deleteDoc, 
-            doc, 
-            onSnapshot,
-            query,
-            orderBy,
-            writeBatch
-        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    <!-- JAVASCRIPT -->
+    <script>
+        /* ============================================
+           SUPABASE KONFIGURATION
+           ============================================ */
+        const SUPABASE_URL = 'https://tzopcotsctuximgcxvoo.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6b3Bjb3RzY3R1eGltZ2N4dm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjY4NDMsImV4cCI6MjA4NjIwMjg0M30.O13d8LR0m02DwJ2e48fGNvUW0i1IJkkoqI6E3Z2jRe0';
 
-        // Firebase Konfiguration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCAP-2uhyw2gHsn9G7-x0y_qqVSv3EZ-3M",
-            authDomain: "flurmanager.firebaseapp.com",
-            projectId: "flurmanager",
-            storageBucket: "flurmanager.firebasestorage.app",
-            messagingSenderId: "137745776898",
-            appId: "1:137745776898:web:4686007b6cf6db730b021b",
-            measurementId: "G-D06JXQJMXR"
-        };
-
-        // Firebase initialisieren
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const entriesCollection = collection(db, 'entries');
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         /* ============================================
-           OFFIZIELLE GEMARKUNGEN - RHEIN-SIEG-KREIS
+           GEMARKUNGEN DATEN
            ============================================ */
         const KATASTER_DATA = {
-            // ========== STÄDTE ==========
             "Bad Honnef": ["Aegidienberg", "Honnef"],
             "Bornheim": ["Bornheim-Brenig", "Hersel", "Kardorf-Hemmerich", "Merten", "Roisdorf", "Sechtem", "Uedorf", "Walberberg", "Widdig"],
             "Hennef (Sieg)": ["Allner", "Altenbödingen", "Blankenberg", "Geistingen", "Happerschoß", "Kurscheid", "Lauthausen", "Lichtenberg", "Söven", "Striefen", "Süchterscheid", "Uckerath", "Wellesberg"],
@@ -1180,7 +1158,6 @@
             "Sankt Augustin": ["Birlinghoven", "Buisdorf", "Hangelar", "Meindorf", "Niedermenden", "Niederpleis", "Obermenden", "Siegburg-Mülldorf"],
             "Siegburg": ["Braschoß", "Seligenthal", "Siegburg", "Wolsdorf"],
             "Troisdorf": ["Altenrath", "Bergheim-Müllekoven", "Höhe", "Sieglar", "Spich", "Troisdorf"],
-            // ========== GEMEINDEN ==========
             "Alfter": ["Alfter", "Gielsdorf", "Impekoven", "Oedekoven", "Witterschlick"],
             "Eitorf": ["Eitorf", "Halft", "Linkenbach"],
             "Much": ["Bennrath", "Bonrath", "Gerlinghausen", "Löbach", "Markelsbach", "Miebach", "Much", "Wersch"],
@@ -1191,15 +1168,12 @@
             "Windeck": ["Dattenfeld", "Geilhausen", "Herchen", "Kohlberg", "Leuscheid", "Rosbach", "Windeck"]
         };
 
-        // Konfiguration
         const CONFIG = {
             TARGET_KM2: 4.5,
             M2_TO_KM2: 1000000
         };
 
-        // Globale Daten
         let entries = [];
-        let isConnected = false;
 
         /* ============================================
            DOM ELEMENTE
@@ -1240,7 +1214,6 @@
         /* ============================================
            HILFSFUNKTIONEN
            ============================================ */
-
         function showToast(message, type = "info") {
             const toast = document.createElement("div");
             toast.className = `toast ${type}`;
@@ -1260,11 +1233,8 @@
         function formatDate(timestamp) {
             const date = new Date(timestamp);
             return date.toLocaleDateString("de-DE", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
+                day: "2-digit", month: "2-digit", year: "numeric",
+                hour: "2-digit", minute: "2-digit"
             });
         }
 
@@ -1279,13 +1249,12 @@
         }
 
         function getMonthName() {
-            const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", 
-                           "Juli", "August", "September", "Oktober", "November", "Dezember"];
+            const months = ["Januar", "Februar", "März", "April", "Mai", "Juni",
+                "Juli", "August", "September", "Oktober", "November", "Dezember"];
             return months[new Date().getMonth()];
         }
 
         function updateSyncStatus(connected, syncing = false) {
-            isConnected = connected;
             if (syncing) {
                 elements.syncDot.className = "sync-dot syncing";
                 elements.syncText.textContent = "Synchronisiere...";
@@ -1299,99 +1268,111 @@
         }
 
         /* ============================================
-           FIREBASE OPERATIONEN
+           SUPABASE OPERATIONEN
            ============================================ */
-
-        async function addEntryToFirebase(entry) {
+        async function loadEntries() {
             try {
                 updateSyncStatus(true, true);
-                await addDoc(entriesCollection, entry);
+                const { data, error } = await supabase
+                    .from('entries')
+                    .select('*')
+                    .order('timestamp', { ascending: false });
+
+                if (error) throw error;
+
+                entries = data || [];
+                elements.loadingOverlay.classList.add("hidden");
+                updateSyncStatus(true);
+                updateUI();
+            } catch (error) {
+                console.error("Fehler beim Laden:", error);
+                elements.loadingOverlay.classList.add("hidden");
+                updateSyncStatus(false);
+                showToast("Fehler beim Laden der Daten!", "error");
+            }
+        }
+
+        async function addEntry(entry) {
+            try {
+                updateSyncStatus(true, true);
+                const { data, error } = await supabase
+                    .from('entries')
+                    .insert([entry])
+                    .select();
+
+                if (error) throw error;
+
+                await loadEntries();
                 showToast("Fläche erfolgreich erfasst!", "success");
             } catch (error) {
                 console.error("Fehler beim Hinzufügen:", error);
+                updateSyncStatus(false);
                 showToast("Fehler beim Speichern!", "error");
-            } finally {
-                updateSyncStatus(true);
             }
         }
 
-        async function updateEntryInFirebase(id, updates) {
+        async function updateEntry(id, updates) {
             try {
                 updateSyncStatus(true, true);
-                const docRef = doc(db, 'entries', id);
-                await updateDoc(docRef, updates);
+                const { error } = await supabase
+                    .from('entries')
+                    .update(updates)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadEntries();
                 showToast("Eintrag aktualisiert!", "success");
             } catch (error) {
                 console.error("Fehler beim Aktualisieren:", error);
+                updateSyncStatus(false);
                 showToast("Fehler beim Aktualisieren!", "error");
-            } finally {
-                updateSyncStatus(true);
             }
         }
 
-        async function deleteEntryFromFirebase(id) {
+        async function deleteEntry(id) {
             try {
                 updateSyncStatus(true, true);
-                const docRef = doc(db, 'entries', id);
-                await deleteDoc(docRef);
+                const { error } = await supabase
+                    .from('entries')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadEntries();
                 showToast("Eintrag gelöscht!", "info");
             } catch (error) {
                 console.error("Fehler beim Löschen:", error);
+                updateSyncStatus(false);
                 showToast("Fehler beim Löschen!", "error");
-            } finally {
-                updateSyncStatus(true);
             }
         }
 
-        async function clearAllEntriesFromFirebase() {
+        async function clearAllEntries() {
             if (!confirm("Möchtest du wirklich alle Einträge löschen?")) return;
-            
+
             try {
                 updateSyncStatus(true, true);
-                const batch = writeBatch(db);
-                entries.forEach(entry => {
-                    const docRef = doc(db, 'entries', entry.id);
-                    batch.delete(docRef);
-                });
-                await batch.commit();
+                const { error } = await supabase
+                    .from('entries')
+                    .delete()
+                    .neq('id', '00000000-0000-0000-0000-000000000000'); // Löscht alle
+
+                if (error) throw error;
+
+                await loadEntries();
                 showToast("Alle Einträge gelöscht!", "info");
             } catch (error) {
-                console.error("Fehler beim Löschen aller Einträge:", error);
+                console.error("Fehler beim Löschen:", error);
+                updateSyncStatus(false);
                 showToast("Fehler beim Löschen!", "error");
-            } finally {
-                updateSyncStatus(true);
             }
         }
 
         /* ============================================
-           ECHTZEIT-LISTENER
+           DROPDOWNS
            ============================================ */
-
-        function setupRealtimeListener() {
-            const q = query(entriesCollection, orderBy('timestamp', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                elements.loadingOverlay.classList.add("hidden");
-                updateSyncStatus(true);
-                
-                entries = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                updateUI();
-            }, (error) => {
-                console.error("Firestore Fehler:", error);
-                elements.loadingOverlay.classList.add("hidden");
-                updateSyncStatus(false);
-                showToast("Verbindungsfehler zu Firebase!", "error");
-            });
-        }
-
-        /* ============================================
-           CASCADING DROPDOWNS
-           ============================================ */
-
         function populateGemeindeOptions(selectElement) {
             selectElement.innerHTML = '<option value="">Gemeinde wählen...</option>';
             Object.keys(KATASTER_DATA).sort().forEach(gemeinde => {
@@ -1420,7 +1401,6 @@
         /* ============================================
            UI UPDATE
            ============================================ */
-
         function calculateTotalArea() {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -1428,11 +1408,10 @@
 
             const monthlyEntries = entries.filter(entry => {
                 const entryDate = new Date(entry.timestamp);
-                return entryDate.getMonth() === currentMonth &&
-                    entryDate.getFullYear() === currentYear;
+                return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
             });
 
-            const totalM2 = monthlyEntries.reduce((sum, entry) => sum + entry.areaM2, 0);
+            const totalM2 = monthlyEntries.reduce((sum, entry) => sum + (entry.areaM2 || 0), 0);
             return totalM2 / CONFIG.M2_TO_KM2;
         }
 
@@ -1481,8 +1460,8 @@
                             📍 ${entry.gemeinde} / ${entry.gemarkung} / Flur ${entry.flur}
                         </span>
                     </td>
-                    <td>${formatNumber(entry.areaM2)} m²</td>
-                    <td>${formatNumber(entry.areaM2 / CONFIG.M2_TO_KM2)} km²</td>
+                    <td>${formatNumber(entry.areaM2 || 0)} m²</td>
+                    <td>${formatNumber((entry.areaM2 || 0) / CONFIG.M2_TO_KM2)} km²</td>
                     <td>
                         <div class="table-actions">
                             <button class="btn btn-icon btn-secondary edit-btn" title="Bearbeiten">✏️</button>
@@ -1509,7 +1488,6 @@
         /* ============================================
            EVENT HANDLERS
            ============================================ */
-
         function handleSubmit() {
             const gemeinde = elements.gemeindeSelect.value;
             const gemarkung = elements.gemarkungSelect.value;
@@ -1531,7 +1509,7 @@
                 return;
             }
 
-            addEntryToFirebase({
+            addEntry({
                 gemeinde,
                 gemarkung,
                 flur,
@@ -1566,7 +1544,7 @@
             const row = e.target.closest("tr");
             const id = row.dataset.id;
             if (confirm("Möchtest du diesen Eintrag wirklich löschen?")) {
-                deleteEntryFromFirebase(id);
+                deleteEntry(id);
             }
         }
 
@@ -1577,22 +1555,12 @@
             const flur = elements.editFlurInput.value.trim();
             const areaM2 = parseFloat(elements.editAreaInput.value);
 
-            if (!gemeinde || !gemarkung) {
-                showToast("Bitte wähle Gemeinde und Gemarkung aus.", "error");
+            if (!gemeinde || !gemarkung || !flur || isNaN(areaM2) || areaM2 <= 0) {
+                showToast("Bitte fülle alle Felder korrekt aus.", "error");
                 return;
             }
 
-            if (!flur) {
-                showToast("Bitte gib eine Flurnummer ein.", "error");
-                return;
-            }
-
-            if (isNaN(areaM2) || areaM2 <= 0) {
-                showToast("Bitte gib eine gültige Fläche ein.", "error");
-                return;
-            }
-
-            updateEntryInFirebase(id, { gemeinde, gemarkung, flur, areaM2 });
+            updateEntry(id, { gemeinde, gemarkung, flur, areaM2 });
             elements.editModal.classList.remove("active");
         }
 
@@ -1603,14 +1571,10 @@
         /* ============================================
            INITIALISIERUNG
            ============================================ */
-
         function init() {
             const now = new Date();
             elements.currentDate.textContent = now.toLocaleDateString("de-DE", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric"
+                weekday: "long", year: "numeric", month: "long", day: "numeric"
             });
 
             populateGemeindeOptions(elements.gemeindeSelect);
@@ -1625,7 +1589,7 @@
             });
 
             elements.submitBtn.addEventListener("click", handleSubmit);
-            elements.clearAllBtn.addEventListener("click", clearAllEntriesFromFirebase);
+            elements.clearAllBtn.addEventListener("click", clearAllEntries);
             elements.saveEditBtn.addEventListener("click", handleSaveEdit);
             elements.cancelEditBtn.addEventListener("click", handleCloseModal);
 
@@ -1641,8 +1605,8 @@
                 if (e.key === "Enter") elements.areaInput.focus();
             });
 
-            // Starte Echtzeit-Listener
-            setupRealtimeListener();
+            // Daten laden
+            loadEntries();
         }
 
         document.addEventListener("DOMContentLoaded", init);
